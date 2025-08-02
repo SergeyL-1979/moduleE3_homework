@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Возведение в степень — Классы ES6</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 2rem; }
+    input { margin: 0.3rem 0; padding: 0.4rem; width: 70px; }
+    button { padding: 0.4rem 1rem; margin-top: 0.6rem; }
+    .result { margin-top: 1.2rem; font-weight: bold; }
+    .error { color: red; }
+  </style>
+</head>
+<body>
+  <h2>Калькулятор степени (на классах)</h2>
+  <div>
+    <label>Основание (x): <input type="number" id="base" min="1" value="2"></label><br>
+    <label>Степень (n): <input type="number" id="exponent" min="0" value="3"></label><br>
+    <button id="calcBtn">Вычислить</button>
+  </div>
+  <div class="result" id="output"></div>
+
+  <script>
+    class PowerCalculator {
+      static pow(base, exponent) {
+        if (!Number.isInteger(base) || !Number.isInteger(exponent) || base < 1 || exponent < 0) {
+          throw new Error('Основание должно быть натуральным, степень — неотрицательной');
+        }
+        let result = 1;
+        for (let i = 0; i < exponent; i++) {
+          result *= base;
+        }
+        return result;
+      }
+    }
+
+    document.getElementById('calcBtn').onclick = function() {
+      const base = Number(document.getElementById('base').value);
+      const exponent = Number(document.getElementById('exponent').value);
+      const output = document.getElementById('output');
+      output.className = 'result';
+
+      try {
+        const res = PowerCalculator.pow(base, exponent);
+        output.textContent = `Результат: ${base} в степени ${exponent} = ${res}`;
+      } catch (e) {
+        output.className += ' error';
+        output.textContent = 'Ошибка: ' + e.message;
+      }
+    };
+  </script>
+</body>
+</html>

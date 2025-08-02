@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Фото-слайдер на классах</title>
+  <style>
+    .slider-container {
+      width: 350px;
+      margin: 50px auto;
+      background: #fff;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.10);
+      border-radius: 16px;
+      padding: 20px 24px 36px 24px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .slider-viewer {
+      width: 300px;
+      height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      border-radius: 10px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.05);
+      background: #f2f2f2;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    .slider-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      opacity: 1;
+      transition: opacity 0.4s ease;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    .slider-img.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .slider-controls {
+      display: flex;
+      gap: 20px;
+    }
+    .slider-btn {
+      background: #e1e5ee;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1.1rem;
+      font-weight: 500;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      outline: none;
+      transition: background 0.2s;
+      user-select: none;
+    }
+    .slider-btn:focus-visible {
+      outline: 2px solid #6ea8fe;
+      outline-offset: 2px;
+      background: #c3ddff;
+    }
+    .slider-btn:hover {
+      background: #d2deff;
+    }
+    .slider-indicator {
+      margin-top: 16px;
+      color: #6b6b6b;
+      font-size: 1rem;
+      letter-spacing: 0.05em;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="slider-container" aria-label="Слайдер фотографий">
+      <div class="slider-viewer" id="sliderViewer" aria-live="polite"></div>
+      <nav class="slider-controls" aria-label="Управление слайдером">
+        <button class="slider-btn" id="prevBtn" tabindex="0" aria-label="Предыдущее фото">&larr; Назад</button>
+        <button class="slider-btn" id="nextBtn" tabindex="0" aria-label="Следующее фото">Вперед &rarr;</button>
+      </nav>
+      <div class="slider-indicator" id="sliderIndicator"></div>
+    </section>
+  </main>
+
+  <script>
+    // Массив изображений (можно свои картинки в asset, либо внешние URL)
+    const images = [
+      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80',
+      'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=600&q=80',
+      'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=600&q=80',
+      'https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=600&q=80'
+      // можно добавить любые другие
+    ];
+
+    class PhotoSlider {
+      constructor(images, viewerId, prevBtnId, nextBtnId, indicatorId) {
+        this.images = images;
+        this.viewer = document.getElementById(viewerId);
+        this.prevBtn = document.getElementById(prevBtnId);
+        this.nextBtn = document.getElementById(nextBtnId);
+        this.indicator = document.getElementById(indicatorId);
+        this.current = 0;
+        this.imgElements = [];
+        this.isAnimating = false;
+
+        this.setup();
+        this.addListeners();
+      }
+
+      setup() {
+        // Предварительно создаем элементы img для всех изображений (для анимации и фиксированного блока)
+        this.viewer.innerHTML = '';
+        this.imgElements = this.images.map((src, idx) => {
+          const img = document.createElement('img');
+          img.className = 'slider-img' + (idx === this.current ? '' : ' hidden');
+          img.src = src;
+          img.alt = `Фото ${idx + 1}`;
+          img.setAttribute('draggable', 'false');
+          this.viewer.appendChild(img);
+          return img;
+        });
+        this.updateIndicator();
+      }
+
+      addListeners() {
+        this.prevBtn.addEventListener('click', () => this.showPrev());
+        this.nextBtn.addEventListener('click', () => this.showNext());
+        // accessibility: стрелки влево-вправо для переключения
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowLeft') this.showPrev();
+          if (e.key === 'ArrowRight') this.showNext();
+        });
+      }
+
+      showPrev() {
+        if (this.isAnimating) return;
+        const prev = this.current;
+        this.current = (this.current - 1 + this.images.length) % this.images.length;
+        this.animateTransition(prev, this.current);
+      }
+
+      showNext() {
+        if (this.isAnimating) return;
+        const prev = this.current;
+        this.current = (this.current + 1) % this.images.length;
+        this.animateTransition(prev, this.current);
+      }
+
+      animateTransition(fromIdx, toIdx) {
+        if (fromIdx === toIdx) return;
+        this.isAnimating = true;
+
+        // Скрываем старое изображение с анимацией
+        this.imgElements[fromIdx].classList.add('hidden');
+        // Показываем новое изображение
+        this.imgElements[toIdx].classList.remove('hidden');
+
+        setTimeout(() => {
+          this.isAnimating = false;
+          this.updateIndicator();
+        }, 400); // должно совпадать с transition: opacity
+      }
+
+      updateIndicator() {
+        this.indicator.textContent = `Фото ${this.current + 1} из ${this.images.length}`;
+      }
+    }
+
+    // Инициализация
+    document.addEventListener('DOMContentLoaded', () => {
+      new PhotoSlider(
+        images,
+        'sliderViewer',
+        'prevBtn',
+        'nextBtn',
+        'sliderIndicator'
+      );
+    });
+  </script>
+</body>
+</html>
